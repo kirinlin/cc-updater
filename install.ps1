@@ -120,6 +120,16 @@ $patchedContent = [regex]::Replace(
     $wslUserEvaluator
 )
 
+# --- Strip the deployment-placeholder check: it only makes sense in an
+#     undeployed repo checkout, and would always be a no-op (false-negative
+#     WARN never fires) once patched, since the placeholder path above no
+#     longer matches. ---
+$patchedContent = [regex]::Replace(
+    $patchedContent,
+    '(?ms)^[ \t]*# ===== BEGIN deployment check.*?# ===== END deployment check =====\r?\n',
+    ''
+)
+
 # --- Copy the patched script into place ---
 if (-not (Test-Path -LiteralPath $DestinationDir)) {
     New-Item -ItemType Directory -Path $DestinationDir -Force | Out-Null

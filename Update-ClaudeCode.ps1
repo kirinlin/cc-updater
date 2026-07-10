@@ -12,19 +12,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$isElevated = ([Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-
-if (-not $isElevated) {
-    Write-Host "Not running elevated. Relaunching in an elevated PowerShell window..."
-    $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-NoExit', '-File', "`"$PSCommandPath`"")
-    foreach ($key in $PSBoundParameters.Keys) {
-        $argList += "-$key"
-        $argList += "`"$($PSBoundParameters[$key])`""
-    }
-    Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -Verb RunAs | Out-Null
-    exit
-}
-
 if (-not (Test-Path -LiteralPath $LogDir)) {
     New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 }
@@ -79,6 +66,13 @@ function Update-ClaudeInstallation {
 
 try {
     Write-Log "===== cc-updater run started ====="
+
+    # ===== BEGIN deployment check (stripped by install.ps1 from the deployed copy) =====
+    $scriptSource = Get-Content -LiteralPath $PSCommandPath -Raw
+    if ($scriptSource -match '/home/username/\.local/bin/claude') {
+        Write-Log "This script still contains the placeholder WSL path (/home/username/...). It looks like it is running from the repo checkout rather than a copy deployed via install.ps1." -Level WARN
+    }
+    # ===== END deployment check =====
 
     Write-Log "Fetching release feed from $FeedUrl"
     $feedContent = (Invoke-WebRequest -Uri $FeedUrl -UseBasicParsing).Content
