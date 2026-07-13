@@ -41,6 +41,21 @@ function Write-Log {
     Write-Host $line
 }
 
+function Show-UpdateToast {
+    param(
+        [Parameter(Mandatory)][string]$Label,
+        [Parameter(Mandatory)][string]$OldVersion,
+        [Parameter(Mandatory)][string]$NewVersion
+    )
+    try {
+        Import-Module BurntToast -ErrorAction Stop
+        New-BurntToastNotification -Text 'Claude Code Updated', "$Label claude code updated from version $OldVersion to $NewVersion"
+    }
+    catch {
+        Write-Log "Failed to show update toast notification: $($_.Exception.Message)" -Level WARN
+    }
+}
+
 function Update-ClaudeInstallation {
     param(
         [Parameter(Mandatory)][string]$Label,
@@ -67,6 +82,17 @@ function Update-ClaudeInstallation {
             $upgradeOutput = (& $UpgradeCommand 2>&1) -join "`n"
             Write-Log "$Label upgrade output: $upgradeOutput"
             Write-Log "$Label upgrade command completed."
+
+            $rawVersionAfter = (& $GetVersionCommand 2>&1) -join ' '
+            $matchAfter = [regex]::Match($rawVersionAfter, '\d+\.\d+\.\d+')
+            if ($matchAfter.Success) {
+                $newVersionString = $matchAfter.Value
+                Write-Log "$Label version after upgrade: $newVersionString"
+                Show-UpdateToast -Label $Label -OldVersion $localVersionString -NewVersion $newVersionString
+            }
+            else {
+                Write-Log "Could not parse $Label claude version after upgrade from output: $rawVersionAfter" -Level WARN
+            }
         }
         else {
             Write-Log "$Label installed version ($localVersionString) is up to date (latest: $LatestVersion). No action taken."
