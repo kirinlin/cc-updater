@@ -57,6 +57,20 @@ if (-not (Test-Path -LiteralPath $SourceScript)) {
     throw "Source script not found: $SourceScript"
 }
 
+# --- Ensure the BurntToast module is available so the updater can show
+#     toast notifications after a successful update. ---
+if (-not (Get-Module -ListAvailable -Name BurntToast)) {
+    Write-Host "BurntToast module not found. Installing for current user..."
+    try {
+        Install-Module -Name BurntToast -Scope CurrentUser -Force -SkipPublisherCheck
+        Write-Host "BurntToast module installed."
+    }
+    catch {
+        Write-Warning "Failed to install BurntToast module: $($_.Exception.Message)"
+        Write-Warning "Toast notifications after updates will not be available."
+    }
+}
+
 $sourceContent = Get-Content -LiteralPath $SourceScript -Raw
 
 # --- Derive defaults from the existing script content ---

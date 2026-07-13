@@ -11,6 +11,7 @@ PowerShell scripts that keep the Claude Code CLI up to date on both Windows and 
    - Windows: `claude upgrade`
    - WSL: `wsl bash -l -c ".../claude update"`
 5. Logs every step to a daily log file and to the console.
+6. Shows a Windows toast notification (via [BurntToast](https://github.com/Windos/BurntToast)) after each successful upgrade, e.g. "Windows claude code updated from version 1.2.3 to 1.2.4".
 
 The Windows and WSL checks run independently — if one fails (e.g. WSL isn't installed), it's logged as an error but the other check still runs.
 
@@ -25,6 +26,7 @@ The Windows and WSL checks run independently — if one fails (e.g. WSL isn't in
 It will:
 
 - Relaunch itself in an elevated PowerShell window if it isn't already running as Administrator (registering a scheduled task requires it).
+- Install the [BurntToast](https://github.com/Windos/BurntToast) module for the current user if it isn't already installed (needed for update toast notifications).
 - Prompt for the log directory, WSL username, and script install directory (or take them as parameters).
 - Patch a copy of `Update-ClaudeCode.ps1` with those values — setting the `-LogDir` default and rewriting the WSL `claude` path to `/home/<WslUsername>/.local/bin/claude`.
 - Copy the patched script to the install directory.
