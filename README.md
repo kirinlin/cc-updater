@@ -1,5 +1,7 @@
 # cc-updater
 
+**Claude Code native installations automatically update in the background.**
+
 PowerShell scripts that keep the Claude Code CLI up to date on both Windows and WSL.
 
 ## What it does
