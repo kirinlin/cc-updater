@@ -36,7 +36,7 @@ function Show-UpdateToast {
     )
     try {
         Import-Module BurntToast -ErrorAction Stop
-        New-BurntToastNotification -Text 'Claude Code Updated', "$Label claude code updated from version $OldVersion to $NewVersion"
+        New-BurntToastNotification -Text "$Label Claude Code Updated", "From $OldVersion to $NewVersion"
     }
     catch {
         Write-Log "Failed to show update toast notification: $($_.Exception.Message)" -Level WARN
