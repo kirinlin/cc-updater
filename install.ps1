@@ -21,6 +21,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Fixed, well-known location (independent of $DestinationDir) so uninstall.ps1
+# can find it without needing -DestinationDir passed explicitly.
+$stateFile = Join-Path $env:LOCALAPPDATA 'cc-updater\install-state.json'
+
 # $PSScriptRoot is empty when read from a param() default value in this
 # host/invocation combo, so resolve the SourceScript default here instead.
 if (-not $SourceScript) {
@@ -170,4 +174,13 @@ Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Pr
     -Description 'Checks and upgrades the Claude Code CLI (Windows + WSL) twice daily.' | Out-Null
 
 Write-Host "Registered scheduled task '$TaskName' to run daily at 9:00 AM and 11:59 AM as $env:USERNAME."
+
+# --- Remember DestinationDir so uninstall.ps1 can find the installed
+#     script without requiring -DestinationDir to be passed again. ---
+$stateDir = Split-Path -Parent $stateFile
+if (-not (Test-Path -LiteralPath $stateDir)) {
+    New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
+}
+@{ DestinationDir = $DestinationDir } | ConvertTo-Json | Set-Content -LiteralPath $stateFile -Encoding UTF8
+
 Write-Host "Done."
