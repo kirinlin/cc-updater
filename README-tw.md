@@ -82,3 +82,17 @@ C:\logs\cc-updater\cc-updater_2026-07-08.log
 ```
 
 每一行都有時間戳記，並標上層級（`INFO`、`WARN`、`ERROR`）。
+
+## 停用自動背景更新
+
+將 `DISABLE_AUTOUPDATER` 設為 `1`，即可停用自動背景更新；手動執行 `claude update` 仍可正常運作。
+
+請將以下內容加入 `~/.claude/settings.json` 檔案：
+
+```json
+   {
+     "env": {
+       "DISABLE_AUTOUPDATER": 1
+     }
+   }
+```

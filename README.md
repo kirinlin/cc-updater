@@ -82,3 +82,17 @@ C:\logs\cc-updater\cc-updater_2026-07-08.log
 ```
 
 Each line is timestamped and tagged with a level (`INFO`, `WARN`, `ERROR`).
+
+## Disable Automatic Background Updates
+
+Set `DISABLE_AUTOUPDATER` to `1` to disable automatic background updates. Manual claude update still works.
+
+Add this to your `~/.claude/settings.json` file:
+
+```json
+   {
+     "env": {
+       "DISABLE_AUTOUPDATER": 1
+     }
+   }
+```
