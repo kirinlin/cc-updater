@@ -53,7 +53,7 @@ Windows 與 WSL 的檢查各自獨立執行。如果其中一項失敗（例如�
 .\Update-ClaudeCode.ps1
 ```
 
-這個儲存庫中的 `Update-ClaudeCode.ps1` 附帶佔位用的預設值（日誌目錄為 `C:\logs\cc-updater`，WSL 執行檔為 `/home/username/.local/bin/claude`）。直接執行會去檢查一個名稱剛好是 `username` 的 WSL 使用者。請改用下列任一方式填入實際值：執行 `install.ps1` 修補、直接編輯指令碼，或用參數傳入：
+這個儲存庫中的 `Update-ClaudeCode.ps1` 附帶佔位用的預設值（日誌目錄為 `C:\logs\cc-updater`，WSL 執行檔為 `/home/username/.local/bin/claude`）。直接執行會檢查名稱剛好是 `username` 的 WSL 使用者。請改用下列任一方式填入實際值：執行 `install.ps1` 修補、直接編輯指令碼，或用參數傳入：
 
 ### 參數
 
@@ -77,7 +77,7 @@ Register-ScheduledTask -TaskName 'cc-updater' -Action $action -Trigger $trigger
 
 日誌會以每天一個檔案的方式寫入 `<LogDir>\cc-updater_YYYY-MM-DD.log`，例如：
 
-```
+```text
 C:\logs\cc-updater\cc-updater_2026-07-08.log
 ```
 
