@@ -175,12 +175,11 @@ Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Pr
 
 Write-Host "Registered scheduled task '$TaskName' to run daily at 9:00 AM and 11:59 AM as $env:USERNAME."
 
-# --- Remember DestinationDir so uninstall.ps1 can find the installed
-#     script without requiring -DestinationDir to be passed again. ---
+# --- Remember the directory and task name for uninstall.ps1. ---
 $stateDir = Split-Path -Parent $stateFile
 if (-not (Test-Path -LiteralPath $stateDir)) {
     New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
 }
-@{ DestinationDir = $DestinationDir } | ConvertTo-Json | Set-Content -LiteralPath $stateFile -Encoding UTF8
+@{ DestinationDir = $DestinationDir; TaskName = $TaskName } | ConvertTo-Json | Set-Content -LiteralPath $stateFile -Encoding UTF8
 
 Write-Host "Done."

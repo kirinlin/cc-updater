@@ -36,6 +36,12 @@ Windows 與 WSL 的檢查各自獨立執行。如果其中一項失敗（例如�
 - 將修補後的指令碼複製到安裝目錄。
 - 註冊（或取代）排程工作，以目前使用者身分每天在 09:00 與 11:59 執行指令碼。
 
+安裝程式會將 `DestinationDir` 與 `TaskName` 儲存至 `%LOCALAPPDATA%\cc-updater\install-state.json`。
+
+安裝程式會在最終確認之前嘗試安裝 BurntToast。即使取消安裝，模組也可能已安裝。模組安裝失敗時，安裝程式會警告並繼續，但無法顯示更新通知。
+
+「目前使用者」是執行提升權限程序的帳號。若在 UAC 使用另一個管理員帳號，排程工作、BurntToast 模組與狀態檔可能屬於該帳號。解除安裝時請使用相同帳號。
+
 ### 安裝參數
 
 | 參數 | 預設值 | 說明 |
@@ -45,7 +51,7 @@ Windows 與 WSL 的檢查各自獨立執行。如果其中一項失敗（例如�
 | `-LogDir` | 提示輸入（建議值為來源指令碼中目前的 `$LogDir` 設定） | 寫入已安裝指令碼的日誌目錄。 |
 | `-WslUsername` | 提示輸入（建議值 `$env:USERNAME`） | 用來組成 `/home/<user>/.local/bin/claude` 路徑的 WSL 使用者名稱。 |
 | `-TaskName` | `Claude Code Updater` | 排程工作名稱。 |
-| `-Force` | 關閉 | 略過安裝前的確認提示。 |
+| `-Force` | 關閉 | 只略過最終確認。未提供的設定值仍會提示輸入。 |
 
 ## 手動執行
 
@@ -53,7 +59,7 @@ Windows 與 WSL 的檢查各自獨立執行。如果其中一項失敗（例如�
 .\Update-ClaudeCode.ps1
 ```
 
-這個儲存庫中的 `Update-ClaudeCode.ps1` 附帶佔位用的預設值（日誌目錄為 `C:\logs\cc-updater`，WSL 執行檔為 `/home/username/.local/bin/claude`）。直接執行會檢查名稱剛好是 `username` 的 WSL 使用者。請改用下列任一方式填入實際值：執行 `install.ps1` 修補、直接編輯指令碼，或用參數傳入：
+這個儲存庫中的 `Update-ClaudeCode.ps1` 附帶佔位用的預設值（日誌目錄為 `C:\logs\cc-updater`，WSL 執行檔為 `/home/username/.local/bin/claude`）。直接執行會檢查名稱是 `username` 的 WSL 使用者。日誌目錄可透過 `-LogDir` 設定。WSL 路徑須由 `install.ps1` 修補或直接編輯；指令碼沒有 WSL 路徑參數。
 
 ### 參數
 
@@ -64,13 +70,46 @@ Windows 與 WSL 的檢查各自獨立執行。如果其中一項失敗（例如�
 
 ## 排程
 
-`install.ps1`（見上文）會為你註冊排程工作。若要手動註冊：
+`install.ps1` 會為你註冊排程工作。手動註冊前，請先將已完成設定的指令碼放在 `C:\scripts\Update-ClaudeCode.ps1`。接著在提升權限的 PowerShell 視窗執行下列指令。兩個每日觸發器分別在 09:00 與 11:59 執行，兩者皆為上午：
 
 ```powershell
+$taskName = 'Claude Code Updater'
 $action = New-ScheduledTaskAction -Execute 'powershell.exe' `
     -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\scripts\Update-ClaudeCode.ps1"'
-$trigger = New-ScheduledTaskTrigger -Daily -At 9am
-Register-ScheduledTask -TaskName 'cc-updater' -Action $action -Trigger $trigger
+$triggers = @(
+    New-ScheduledTaskTrigger -Daily -At '09:00'
+    New-ScheduledTaskTrigger -Daily -At '11:59'
+)
+$principal = New-ScheduledTaskPrincipal `
+    -UserId $env:USERNAME -LogonType S4U -RunLevel Limited
+
+Register-ScheduledTask -TaskName $taskName `
+    -Action $action -Trigger $triggers -Principal $principal
+```
+
+## 解除安裝
+
+請使用安裝時的帳號執行：
+
+```powershell
+.\uninstall.ps1
+```
+
+指令碼會在需要時要求提升權限，列出要移除的排程工作與指令碼，然後要求確認。它會移除排程工作、已安裝的 `Update-ClaudeCode.ps1` 與狀態檔，並保留日誌檔案及 BurntToast。若排程工作與指令碼都不存在，它會直接結束並保留狀態檔。
+
+| 參數 | 預設值 | 說明 |
+|---|---|---|
+| `-DestinationDir` | 狀態檔中的目錄，其次為 `C:\scripts` | 已安裝指令碼所在的目錄。 |
+| `-TaskName` | 狀態檔中的名稱，其次為 `Claude Code Updater` | 要移除的工作。明確傳入的參數優先於狀態檔。 |
+| `-Force` | 關閉 | 略過最終確認，仍需提升權限。 |
+
+舊狀態檔沒有 `TaskName`。若使用舊版安裝程式安裝自訂名稱的工作，請以 `-TaskName` 傳入該名稱。
+
+安裝程式只取代同名工作，不會遷移或移除舊的 `cc-updater` 工作。請在提升權限的 PowerShell 視窗檢查該工作。確認它是舊版更新工作後，再移除：
+
+```powershell
+Get-ScheduledTask -TaskName 'cc-updater' -ErrorAction SilentlyContinue
+Unregister-ScheduledTask -TaskName 'cc-updater' -Confirm
 ```
 
 ## 日誌

@@ -5,8 +5,8 @@
 .DESCRIPTION
     Removes the scheduled task registered by install.ps1 and deletes the
     copied Update-ClaudeCode.ps1 from the destination directory. If
-    -DestinationDir isn't passed, it's read from the state file install.ps1
-    wrote on install.
+    -DestinationDir or -TaskName isn't passed, it's read from the state file
+    install.ps1 wrote on install, with defaults for older or missing state.
 #>
 
 [CmdletBinding()]
@@ -47,14 +47,19 @@ if (-not $isElevated) {
     return
 }
 
-if (-not $DestinationDir) {
-    if (Test-Path -LiteralPath $stateFile) {
-        $state = Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json
+if ((-not $DestinationDir -or -not $PSBoundParameters.ContainsKey('TaskName')) -and
+    (Test-Path -LiteralPath $stateFile)) {
+    $state = Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json
+    if (-not $DestinationDir) {
         $DestinationDir = $state.DestinationDir
     }
-    if (-not $DestinationDir) {
-        $DestinationDir = 'C:\scripts'
+    if (-not $PSBoundParameters.ContainsKey('TaskName') -and
+        -not [string]::IsNullOrWhiteSpace($state.TaskName)) {
+        $TaskName = $state.TaskName
     }
+}
+if (-not $DestinationDir) {
+    $DestinationDir = 'C:\scripts'
 }
 
 $destinationScript = Join-Path $DestinationDir 'Update-ClaudeCode.ps1'
